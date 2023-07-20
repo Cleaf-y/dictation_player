@@ -1,4 +1,3 @@
-import {useConfigStore} from "../store/index.js";
 import {exists, createDir, readDir} from "@tauri-apps/api/fs";
 import {documentDir, join} from "@tauri-apps/api/path";
 
