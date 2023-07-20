@@ -1,0 +1,75 @@
+{
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist",
+    "withGlobalTauri": false
+  },
+  "package": {
+    "productName": "naiveui",
+    "version": "0.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "dialog": {
+        "all": false,
+        "ask": false,
+        "confirm": true,
+        "message": true,
+        "open": true,
+        "save": false
+      },
+      "shell": {
+        "all": false,
+        "open": true
+      },
+      "path": {
+        "all": true
+      },
+      "fs": {
+        "all": false,
+        "readDir": true,
+        "exists": true,
+        "readFile": true,
+        "scope": ["$DOCUMENT/**", "$APPDATA/**", "$CACHE/**"]
+      },
+      "protocol": {
+        "asset": true,
+        "assetScope": ["**"]
+      },
+      "window": {
+        "all": false,
+        "startDragging": true,
+        "close": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "targets": "all",
+      "identifier": "com.sychen.dictation",
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ]
+    },
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost; media-src 'self' asset: https://asset.localhost; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+    },
+    "windows": [
+      {
+        "decorations": false,
+        "fullscreen": false,
+        "resizable": true,
+        "title": "Dictation",
+        "width": 1200,
+        "height": 980,
+        "transparent": true
+      }
+    ]
+  }
+}
