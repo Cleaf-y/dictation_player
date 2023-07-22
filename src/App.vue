@@ -9,7 +9,7 @@ const configStore = useConfigStore()
   <div class="dragger"></div>
 <n-config-provider :theme="configStore.currentTheme">
   <n-dialog-provider>
-    <n-notification-provider>
+    <n-notification-provider placement="bottom-right">
       <n-message-provider>
         <Wrapper />
       </n-message-provider>
