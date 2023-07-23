@@ -1,5 +1,5 @@
 <script setup>
-import {h, ref, reactive, onMounted, watch, computed, onBeforeUnmount} from "vue";
+import {h, ref, reactive, onMounted, computed, onBeforeUnmount} from "vue";
 import {convertFileSrc} from "@tauri-apps/api/tauri";
 import {AnimalCat24Regular, Play12Filled, Pause16Filled, ArrowReset24Filled} from "@vicons/fluent";
 import {SkipPreviousFilled, SkipNextFilled} from "@vicons/material";
