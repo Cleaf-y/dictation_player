@@ -1,19 +1,65 @@
 <script setup>
+import {Heart48Regular} from '@vicons/fluent'
+import {ref, reactive} from 'vue'
 import {useConfigStore} from "../store/index.js";
 const configStore = useConfigStore()
 
-import {ref} from 'vue'
 const showModal = ref(false)
 
-import {Heart48Regular} from '@vicons/fluent'
+const myTableColumns = [
+  {
+    title: '序号',
+    key: 'id',
+    width: 60
+  },
+  {
+    title: '标题',
+    key: 'title',
+    width: 350
+  },
+  {
+    title: '时间',
+    key: 'datetime',
+    width: 150
+  },
+  {
+    title: '用时',
+    key: 'duration',
+    width: 150
+  }
+]
+const myHistory = reactive([
+  {
+    id:1,
+    title: 'TPO1-ListeningPassage1',
+    datetime: '2021-08-01 12:00:00',
+    duration: '35:22'
+  }
+])
 </script>
 
 <template>
   <n-card>
-    Welcome, {{configStore.userName}}
+    <template #header>
+      Welcome, {{configStore.userName}}
+    </template>
+    <n-space vertical align="center">
+      <n-space space="space-between" align="center">
+
+      </n-space>
+    </n-space>
   </n-card>
-  <n-card>
-    精听学习记录
+  <n-card title="学习记录">
+    <n-data-table
+      :pagination="{pageSize: 6}"
+      :columns="myTableColumns"
+      :data="myHistory"
+      size="medium"
+      min-height="320"
+      max-height="320"
+    >
+
+    </n-data-table>
   </n-card>
   <div class="about">
     <n-button text @click="showModal = true"><n-text type="success">关于</n-text></n-button>

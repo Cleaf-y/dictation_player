@@ -25,6 +25,7 @@ const pageData = reactive({
   currentTime: 0,
   currentSlider: 0,
   interval: 5,
+  currentPlaybackRate: 1.0,
   currentIndex: 0,
   subtitles: [],
   currentRepeatedTimes: 0,
@@ -34,6 +35,7 @@ const pageData = reactive({
 })
 const currentSentenceTimer = ref()
 const currentInterSentenceTimer = ref()
+
 const currentVerboseTime = computed(()=>{
   return secondsToTime(pageData.currentTime)
 })
@@ -43,6 +45,29 @@ const currentVerboseMode = computed(()=>{
   }else{
     return "手动"
   }
+})
+const playButtonType = computed(()=>{
+  if(pageData.playing){
+    return "primary"
+  }else{
+    return "default"
+  }
+})
+const pauseButtonType = computed(()=>{
+  if(pageData.interrupt){
+    return "warning"
+  }else{
+    return "default"
+  }
+})
+const currentModeTag = computed(()=>{
+  if(pageData.initial){
+    return false
+  }
+  if (pageData.interrupt){
+    return false
+  }
+  return true
 })
 
 const emit = defineEmits(["onRepeatChange", "onFinish"])
@@ -85,35 +110,10 @@ function onLoadedMetaData(e) {
   msg.success("音频加载完成")
 }
 function setPlaybackRate(rate) {
+  setPlayingState('pause')
+  pageData.currentPlaybackRate = rate
   audioRef.value.playbackRate = rate
-}
-function togglePlay(){
-  if(pageData.playing){
-    return
-  }
-  if(pageData.initial){
-    togglePlayingNextSentence()
-    return
-  }
-  if(pageData.waitingForNext){
-    handlePlaySentence(pageData.currentIndex)
-    return
-  }
-  clearTimers()
-  const {startTime, duration} = pageData.subtitles[pageData.currentIndex]
-  let offset = audioRef.value.currentTime - startTime
-  setPlayingState("play")
-  currentSentenceTimer.value = setTimeout(handleNextSentence, duration-offset*1000+300)
-
-}
-function togglePause(){
-    if(pageData.initial){
-      msg.warning("还没开始播放哦~")
-      return
-    }
-    pageData.interrupt=true
-    setPlayingState("pause")
-    clearTimers()
+  togglePlay()
 }
 function setCurrentTimeBySlider(e){
   if(pageData.auto) return
@@ -124,6 +124,38 @@ function setCurrentTimeBySlider(e){
 const formatToolTip = (val)=>{
   if (pageData.auto) return "自动播放中"
   return secondsToTime(val / 100 * pageData.duration)
+}
+
+function togglePlay(){
+  if(pageData.playing){
+    return
+  }
+  if(pageData.initial){
+    togglePlayingNextSentence()
+    return
+  }
+  pageData.interrupt = false
+  if(pageData.waitingForNext){
+    clearTimers()
+    handlePlaySentence(pageData.currentIndex)
+    return
+  }
+  clearTimers()
+  const {startTime, duration} = pageData.subtitles[pageData.currentIndex]
+  let offset = audioRef.value.currentTime - startTime
+  setPlayingState("play")
+  currentSentenceTimer.value = setTimeout(handleNextSentence, (duration-offset*1000+300)/pageData.currentPlaybackRate)
+
+}
+
+function togglePause(){
+  if(pageData.initial){
+    msg.warning("还没开始播放哦~")
+    return
+  }
+  pageData.interrupt=true
+  setPlayingState("pause")
+  clearTimers()
 }
 
 function togglePlayingNextSentence(){
@@ -170,7 +202,7 @@ function handlePlaySentence(index){
   audioRef.value.currentTime = startTime
   emit("onRepeatChange", pageData.currentRepeatedTimes, pageData.currentIndex)
   setPlayingState("play")
-  currentSentenceTimer.value = setTimeout(handleNextSentence, duration+300)
+  currentSentenceTimer.value = setTimeout(handleNextSentence, (duration+300)/pageData.currentPlaybackRate)
 }
 
 import {useNotification} from "naive-ui";
@@ -211,8 +243,6 @@ function handleNextSentence() {
                 }
             )
       })
-
-
       clearTimers()
       emit("onFinish")
       return
@@ -250,6 +280,7 @@ function toggleClearPlayback() {
 }
 
 function onGoTo(index){
+  pageData.interrupt = false
   clearTimers()
   setPlayingState('pause')
   pageData.currentRepeatedTimes = 0
@@ -258,10 +289,6 @@ function onGoTo(index){
 }
 
 const repeatTimesOptions = [
-  {
-    label: "1次",
-    key: "1"
-  },
   {
     label: "2次",
     key: "2"
@@ -314,8 +341,9 @@ function handleSelectInterval(key) {
       <template #header>
         <n-space>
           <n-a>{{props.title}}</n-a>
-          <n-tag>ETA: {{calculateTotalTime()}}</n-tag>
-          <n-tag v-show="pageData.interrupt" type="warning">暂停</n-tag>
+          <n-tag>ECT: {{calculateTotalTime()}}</n-tag>
+          <n-tag v-if="pageData.interrupt" type="warning">暂停</n-tag>
+          <n-tag v-if="currentModeTag" type="success">自动播放</n-tag>
         </n-space>
 
       </template>
@@ -334,11 +362,11 @@ function handleSelectInterval(key) {
         <n-space justify="space-between">
           <n-button-group>
             <n-button @click="togglePlayingPrevSentence"><template #icon><n-icon :size="24"><SkipPreviousFilled /></n-icon></template></n-button>
-            <n-button @click="togglePlay"><template #icon><Play12Filled /></template></n-button>
-            <n-button @click="togglePause"><template #icon><Pause16Filled /></template></n-button>
+            <n-button :type="playButtonType" @click="togglePlay"><template #icon><Play12Filled /></template></n-button>
+            <n-button :type="pauseButtonType" @click="togglePause"><template #icon><Pause16Filled /></template></n-button>
             <n-button @click="togglePlayingNextSentence"><template #icon><n-icon :size="24"><SkipNextFilled /></n-icon></template></n-button>
             <n-button @click="setPlaybackRate(0.75)">0.75x</n-button>
-            <n-button @click="setPlaybackRate(1)">1.0x</n-button>
+            <n-button @click="setPlaybackRate(1.0)">1.0x</n-button>
             <n-button @click="toggleClearPlayback"><template #icon><ArrowReset24Filled /></template></n-button>
           </n-button-group>
           <n-button-group>
@@ -380,6 +408,7 @@ function handleSelectInterval(key) {
   <Entry
       :initial="pageData.initial"
       :total="pageData.subtitles.length"
+      :current="pageData.currentIndex"
       ref="myEntry"
       @onToggleNextSentence="togglePlayingNextSentence"
       @onGoToSentence="onGoTo"
