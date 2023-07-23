@@ -1,10 +1,10 @@
 <script setup>
 import {h, ref, reactive, onMounted, watch, computed, onBeforeUnmount} from "vue";
 import {convertFileSrc} from "@tauri-apps/api/tauri";
-import {message} from "@tauri-apps/api/dialog";
-import {AnimalCat24Regular} from "@vicons/fluent";
+import {AnimalCat24Regular, Play12Filled, Pause16Filled, ArrowReset24Filled} from "@vicons/fluent";
+import {SkipPreviousFilled, SkipNextFilled} from "@vicons/material";
 
-import {secondsToTime, timeStringToSeconds} from "../utils/timeTools.js";
+import {secondsToTime} from "../utils/timeTools.js";
 import {parseSrt} from "../utils/parseSrt.js";
 import Entry from '../components/Entry.vue'
 
@@ -28,7 +28,9 @@ const pageData = reactive({
   currentIndex: 0,
   subtitles: [],
   currentRepeatedTimes: 0,
-  totalRepeatTimes: 2
+  totalRepeatTimes: 2,
+  interrupt: false,
+  waitingForNext: false
 })
 const currentSentenceTimer = ref()
 const currentInterSentenceTimer = ref()
@@ -42,17 +44,7 @@ const currentVerboseMode = computed(()=>{
     return "手动"
   }
 })
-const currentButton = computed(()=>{
-  if(pageData.loaded){
-    if(pageData.playing){
-      return "暂停"
-    }else{
-      return "播放"
-    }
-  } else {
-    return "加载中"
-  }
-})
+
 const emit = defineEmits(["onRepeatChange", "onFinish"])
 defineExpose({
   togglePlayingNextSentence
@@ -84,7 +76,7 @@ function onTimeUpdate(e) {
   pageData.currentSlider = pageData.currentTime / pageData.duration * 100
 }
 
-import {NButton, useMessage, useThemeVars} from "naive-ui";
+import {NButton,NSpace, useMessage, useThemeVars} from "naive-ui";
 const msg = useMessage()
 const themeVars = useThemeVars()
 function onLoadedMetaData(e) {
@@ -95,13 +87,33 @@ function onLoadedMetaData(e) {
 function setPlaybackRate(rate) {
   audioRef.value.playbackRate = rate
 }
-function togglePlayOrPause(){
-  console.log(audioRef.value.paused)
-  if(audioRef.value.paused){
-    setPlayingState("play")
-  }else{
-    setPlayingState("pause")
+function togglePlay(){
+  if(pageData.playing){
+    return
   }
+  if(pageData.initial){
+    togglePlayingNextSentence()
+    return
+  }
+  if(pageData.waitingForNext){
+    handlePlaySentence(pageData.currentIndex)
+    return
+  }
+  clearTimers()
+  const {startTime, duration} = pageData.subtitles[pageData.currentIndex]
+  let offset = audioRef.value.currentTime - startTime
+  setPlayingState("play")
+  currentSentenceTimer.value = setTimeout(handleNextSentence, duration-offset*1000+300)
+
+}
+function togglePause(){
+    if(pageData.initial){
+      msg.warning("还没开始播放哦~")
+      return
+    }
+    pageData.interrupt=true
+    setPlayingState("pause")
+    clearTimers()
 }
 function setCurrentTimeBySlider(e){
   if(pageData.auto) return
@@ -115,8 +127,6 @@ const formatToolTip = (val)=>{
 }
 
 function togglePlayingNextSentence(){
-  setPlayingState("pause")
-  clearTimers()
   if (pageData.initial){
     pageData.initial = false
   } else {
@@ -127,6 +137,9 @@ function togglePlayingNextSentence(){
     pageData.currentIndex += 1
     pageData.currentRepeatedTimes = 0
   }
+  setPlayingState("pause")
+  clearTimers()
+  pageData.interrupt=false
   handlePlaySentence(pageData.currentIndex)
 }
 
@@ -135,6 +148,7 @@ function togglePlayingPrevSentence(){
     msg.info("已经是第一句啦 ~ ")
     return
   }
+  pageData.interrupt=false
   setPlayingState("pause")
   clearTimers()
   if (pageData.initial){
@@ -147,6 +161,7 @@ function togglePlayingPrevSentence(){
 }
 
 function handlePlaySentence(index){
+  pageData.waitingForNext = false
   pageData.currentRepeatedTimes += 1
   if(pageData.currentRepeatedTimes===1){
     myEntry.value.pageData.canInput = false
@@ -162,6 +177,7 @@ import {useNotification} from "naive-ui";
 const notification = useNotification()
 function handleNextSentence() {
   setPlayingState("pause")
+  pageData.waitingForNext = true
   if(pageData.currentRepeatedTimes === 1 ){
     myEntry.value.pageData.canInput = true
   }
@@ -174,19 +190,29 @@ function handleNextSentence() {
         closable: false,
         action: () =>
             h(
-                NButton,
+                NSpace,
                 {
-                  text: true,
-                  type: 'primary',
-                  onClick: () => {
-
-                  }
+                  justify: "end",
+                  align: "end"
                 },
                 {
-                  default: () => '去校对'
+                  default: () =>
+                      h(
+                          NButton,
+                          {
+                            text: true,
+                            type: "primary",
+                            onClick: () => {}
+                          },
+                          {
+                            default: () => "去校对"
+                          }
+                      )
                 }
             )
       })
+
+
       clearTimers()
       emit("onFinish")
       return
@@ -197,21 +223,14 @@ function handleNextSentence() {
   currentInterSentenceTimer.value = setTimeout(handlePlaySentence, pageData.interval * 1000, pageData.currentIndex)
 }
 
-async function toggleConfiguration(){
-  await message("所有的句子都听写完啦 ~", {
-    title: "恭喜！",
-    type: "info"
-  })
-}
-
 function clearTimers() {
   clearTimeout(currentSentenceTimer.value)
   clearTimeout(currentInterSentenceTimer.value)
 }
-function calculateTotalTime(subtitlesArray, repeatCount, intervalSeconds) {
-  const totalTimesInMilliseconds = subtitlesArray.map((subtitle) => {
-    const subtitleDuration = subtitle.duration * repeatCount;
-    const totalIntervalTime = (repeatCount - 1) * intervalSeconds * 1000;
+function calculateTotalTime() {
+  const totalTimesInMilliseconds = pageData.subtitles.map((subtitle) => {
+    const subtitleDuration = subtitle.duration * pageData.totalRepeatTimes;
+    const totalIntervalTime = (pageData.totalRepeatTimes - 1) * pageData.interval * 1000;
     return subtitleDuration + totalIntervalTime;
   });
 
@@ -219,11 +238,6 @@ function calculateTotalTime(subtitlesArray, repeatCount, intervalSeconds) {
 
   // Convert total time to seconds
   return secondsToTime(totalTimeInMilliseconds / 1000)
-}
-
-async function toggleAsync() {
-  await emit("onFinish")
-  console.log("callback")
 }
 
 function toggleClearPlayback() {
@@ -242,6 +256,50 @@ function onGoTo(index){
   pageData.currentIndex = index-1
   handlePlaySentence(index-1)
 }
+
+const repeatTimesOptions = [
+  {
+    label: "1次",
+    key: "1"
+  },
+  {
+    label: "2次",
+    key: "2"
+  },
+  {
+    label: "3次",
+    key: "3"
+  },
+  {
+    label: "4次",
+    key: "4"
+  },
+  {
+    label: "5次",
+    key: "5"
+  }
+]
+function handleSelectTimes(key){
+  pageData.totalRepeatTimes = parseInt(key)
+}
+
+const intervalOptions = [
+  {
+    label: "5秒",
+    key: "5"
+  },
+  {
+    label: "8秒",
+    key: "8"
+  },
+  {
+    label: "10秒",
+    key: "10"
+  }
+]
+function handleSelectInterval(key) {
+  pageData.interval = parseInt(key)
+}
 </script>
 
 <template>
@@ -254,12 +312,18 @@ function onGoTo(index){
           @loadedmetadata="onLoadedMetaData"
       ></audio>
       <template #header>
-        <n-a>{{props.title}}</n-a>
+        <n-space>
+          <n-a>{{props.title}}</n-a>
+          <n-tag>ETA: {{calculateTotalTime()}}</n-tag>
+          <n-tag v-show="pageData.interrupt" type="warning">暂停</n-tag>
+        </n-space>
+
       </template>
       <template #header-extra>
-        <n-text>{{secondsToTime(pageData.duration)}}</n-text>
+        <n-text type="success">{{secondsToTime(pageData.currentTime)}}</n-text>
+        <n-text depth="3">/ {{secondsToTime(pageData.duration)}}</n-text>
       </template>
-      <n-slider :value="pageData.currentSlider">
+      <n-slider :value="pageData.currentSlider" :format-tooltip="formatToolTip">
         <template #thumb>
           <n-icon-wrapper :size="24" :border-radius="12">
             <n-icon :size="18" :component="AnimalCat24Regular" />
@@ -269,19 +333,25 @@ function onGoTo(index){
       <template #footer>
         <n-space justify="space-between">
           <n-button-group>
-            <n-button @click="togglePlayingPrevSentence">上一句</n-button>
-            <n-button @click="togglePlayOrPause">{{currentButton}}</n-button>
-            <n-button @click="togglePlayingNextSentence">下一句</n-button>
+            <n-button @click="togglePlayingPrevSentence"><template #icon><n-icon :size="24"><SkipPreviousFilled /></n-icon></template></n-button>
+            <n-button @click="togglePlay"><template #icon><Play12Filled /></template></n-button>
+            <n-button @click="togglePause"><template #icon><Pause16Filled /></template></n-button>
+            <n-button @click="togglePlayingNextSentence"><template #icon><n-icon :size="24"><SkipNextFilled /></n-icon></template></n-button>
             <n-button @click="setPlaybackRate(0.75)">0.75x</n-button>
             <n-button @click="setPlaybackRate(1)">1.0x</n-button>
-            <n-button @click="toggleClearPlayback">复位</n-button>
+            <n-button @click="toggleClearPlayback"><template #icon><ArrowReset24Filled /></template></n-button>
           </n-button-group>
           <n-button-group>
             <n-button>{{currentVerboseMode}}</n-button>
             <n-button>A</n-button>
             <n-button>B</n-button>
             <n-button >复位</n-button>
-            <n-button>t</n-button>
+            <n-dropdown trigger="hover" :options="repeatTimesOptions" @select="handleSelectTimes">
+              <n-button>{{pageData.totalRepeatTimes}}次</n-button>
+            </n-dropdown>
+            <n-dropdown trigger="hover" :options="intervalOptions" @select="handleSelectInterval">
+              <n-button>{{pageData.interval}}秒</n-button>
+            </n-dropdown>
           </n-button-group>
         </n-space>
       </template>
@@ -292,7 +362,7 @@ function onGoTo(index){
           等待播放
         </n-h4>
         <n-h4 v-if="pageData.currentRepeatedTimes!==0">
-          第 {{pageData.currentRepeatedTimes}} / 5 遍
+          第 {{pageData.currentRepeatedTimes}} / {{pageData.totalRepeatTimes}} 遍
         </n-h4>
         <n-progress
             :color="themeVars.successColor"

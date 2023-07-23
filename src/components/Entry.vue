@@ -100,17 +100,16 @@ defineExpose({
 </script>
 
 <template>
-  <n-space vertical>
-    <n-card>
+
       <n-space vertical>
         <n-data-table
           ref="myTable"
           :columns="myTableColumns"
           :data="totalEntry"
-          size="small"
+          size="medium"
           :row-props="rowProps"
-          :max-height="260"
-          :min-height="260"
+          :max-height="320"
+          :min-height="320"
           :row-key="row => row.id"
           :striped="true"
         >
@@ -121,15 +120,14 @@ defineExpose({
             </n-space>
           </template>
         </n-data-table>
-          <n-text class="table-tip" type="success">
-            现在输入的是第{{pageData.currentIndex+1}}句
-          </n-text>
-      </n-space>
-    </n-card>
+
 
     <n-card class="input-panel">
       <n-space vertical>
-        <span class="input-tip">在此输入，按Ctrl+Enter提交并进入下一句</span>
+
+        <n-text class="table-tip" type="success">
+          现在输入的是第{{pageData.currentIndex+1}}句
+        </n-text>
         <div>
           <n-input
               :disabled="!pageData.canInput && !pageData.byPass"
@@ -141,11 +139,15 @@ defineExpose({
               type="textarea"
               @keydown.ctrl.enter="onKey"/>
         </div>
-        <n-button-group>
+        <n-space justify="space-between">
+          <n-button-group>
           <n-button @click="addEntry">提交</n-button>
           <n-button @click="onKey">提交并下一句</n-button>
           <n-button @click="onStage" disabled>暂存</n-button>
         </n-button-group>
+          <span class="input-tip">在此输入，按Ctrl+Enter提交并进入下一句</span>
+        </n-space>
+
       </n-space>
     </n-card>
   </n-space>

@@ -64,7 +64,7 @@
       {
         "decorations": false,
         "fullscreen": false,
-        "resizable": true,
+        "resizable": false,
         "title": "Dictation",
         "width": 1200,
         "height": 980,
