@@ -90,10 +90,36 @@ function setPlayingState(state){
 onMounted(async () => {
   audioRef.value.src = convertFileSrc(props.audio)
   pageData.subtitles = await parseSrt(props.subtitle)
+
+  document.onkeydown = e=>{
+    if(e.code === "F1"){
+      togglePlay()
+    }
+    if(e.code === "F2"){
+      togglePause()
+    }
+    if(e.code === "F3"){
+      togglePlayingPrevSentence()
+    }
+    if(e.code === "F4"){
+      togglePlayingNextSentence()
+    }
+    if(e.code === "F5"){
+      toggleClearPlayback()
+    }
+    if(e.code === "F7"){
+      setPlaybackRate(0.75)
+    }
+    if(e.code === "F8"){
+      setPlaybackRate(1.0)
+    }
+    e.preventDefault()
+  }
 })
 
 onBeforeUnmount(()=>{
   clearTimers()
+  document.onkeydown = null
 })
 
 function onTimeUpdate(e) {
@@ -166,7 +192,9 @@ function togglePlayingNextSentence(){
       msg.info("已经是最后一句啦 ~ ")
       return
     }
-    pageData.currentIndex += 1
+    if(pageData.currentIndex === myEntry.value.pageData.currentIndex){
+      pageData.currentIndex += 1
+    }
     pageData.currentRepeatedTimes = 0
   }
   setPlayingState("pause")
@@ -197,6 +225,8 @@ function handlePlaySentence(index){
   pageData.currentRepeatedTimes += 1
   if(pageData.currentRepeatedTimes===1){
     myEntry.value.pageData.canInput = false
+    myEntry.value.pageData.currentEntry = ""
+    myEntry.value.pageData.currentIndex = pageData.currentIndex
   }
   const {startTime, duration} = pageData.subtitles[index]
   audioRef.value.currentTime = startTime

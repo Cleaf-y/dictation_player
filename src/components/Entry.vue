@@ -42,13 +42,10 @@ const holder = computed(()=>{
   return pageData.canInput ? "": "第一遍播放中..."
 })
 
-watch(()=>props.current,async newVal=>{
-  console.log('@', newVal)
-  pageData.currentIndex = newVal
+watch(()=>pageData.currentIndex,async newVal=>{
   let index = totalEntry.findIndex(obj => obj.id === newVal+1)
   console.log(index)
   if (index === -1) {
-    pageData.currentEntry=""
     totalEntry.push({
       id: newVal+1,
       content: ""
@@ -94,8 +91,7 @@ async function onKey() {
   pageData.byPass = false
   emit('onToggleNextSentence')
 }
-function onStage(){
-
+function onNewEntry(){
 }
 
 const rowProps = (row) => {

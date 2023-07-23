@@ -3,6 +3,17 @@ import Wrapper from "./pages/Wrapper.vue";
 
 import {useConfigStore} from "./store/index.js";
 const configStore = useConfigStore()
+
+document.oncontextmenu = function(event) {
+  try {
+    let eventTarget = event.target;
+    return (eventTarget.tagName === 'INPUT' && eventTarget.type.toLowerCase() === 'text') ||
+        eventTarget.tagName === 'TEXTAREA';
+
+  } catch (e) {
+    return false;
+  }
+}
 </script>
 
 <template>
