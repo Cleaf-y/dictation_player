@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "DictationApp",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "tauri": {
     "allowlist": {
@@ -69,7 +69,7 @@
       {
         "decorations": false,
         "fullscreen": false,
-        "resizable": false,
+        "resizable": true,
         "title": "Dictation",
         "width": 1200,
         "height": 980,

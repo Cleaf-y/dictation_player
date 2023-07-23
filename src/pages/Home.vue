@@ -57,8 +57,8 @@ const myHistory = reactive([
       :columns="myTableColumns"
       :data="myHistory"
       size="medium"
-      min-height="320"
-      max-height="320"
+      min-height="260"
+      max-height="260"
     >
 
     </n-data-table>

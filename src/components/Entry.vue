@@ -122,23 +122,37 @@ defineExpose({
 
       <n-space vertical>
         <n-data-table
+            v-if="!props.initial"
           ref="myTable"
           :columns="myTableColumns"
           :data="totalEntry"
           size="medium"
           :row-props="rowProps"
-          :max-height="320"
-          :min-height="320"
+          :max-height="260"
+          :min-height="260"
           :row-key="row => row.id"
           :striped="true"
         >
           <template #empty>
             <n-space vertical align="center">
               <Pony1 />
-              <n-h3>准备好了就开始吧 ~</n-h3>
+
             </n-space>
           </template>
+          <template #descrption>
+            <n-h3>准备好了就开始吧 ~</n-h3>
+          </template>
         </n-data-table>
+        <n-card
+            v-if="props.initial"
+          size="huge"
+        >
+            <n-space vertical align="center">
+              <Pony1 />
+              <n-h3>准备好了就开始吧 ~</n-h3>
+            </n-space>
+
+        </n-card>
 
 
     <n-card class="input-panel">
