@@ -32,7 +32,7 @@ const myTableColumns = [
 const props = defineProps({
   initial: Boolean,
   total: Number,
-  current: Number
+  current: Number,
 })
 
 const holder = computed(()=>{
@@ -48,7 +48,7 @@ watch(()=>pageData.currentIndex,async newVal=>{
   if (index === -1) {
     totalEntry.push({
       id: newVal+1,
-      content: ""
+      content: "",
     })
     pageData.editIndex = totalEntry.length - 1
   } else {
@@ -91,7 +91,8 @@ async function onKey() {
   pageData.byPass = false
   emit('onToggleNextSentence')
 }
-function onNewEntry(){
+function toReview(){
+
 }
 
 const rowProps = (row) => {
@@ -112,7 +113,8 @@ watch(()=>pageData.canInput, async newVal => {
 })
 
 defineExpose({
-  pageData
+  pageData,
+  totalEntry
 })
 </script>
 

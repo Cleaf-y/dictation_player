@@ -39,15 +39,17 @@ const myHistory = reactive([
 </script>
 
 <template>
+  <n-space vertical >
   <n-card>
     <template #header>
       Welcome, {{configStore.userName}}
     </template>
-    <n-space vertical align="center">
-      <n-space space="space-between" align="center">
-
-      </n-space>
+    <n-space space="start" align="start">
+      <n-text>今天也要加油呀！</n-text>
     </n-space>
+
+
+
   </n-card>
   <n-card title="学习记录">
     <n-data-table
@@ -60,7 +62,7 @@ const myHistory = reactive([
     >
 
     </n-data-table>
-  </n-card>
+  </n-card></n-space>
   <div class="about">
     <n-button text @click="showModal = true"><n-text type="success">关于</n-text></n-button>
   </div>

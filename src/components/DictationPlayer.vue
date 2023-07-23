@@ -91,29 +91,40 @@ onMounted(async () => {
   audioRef.value.src = convertFileSrc(props.audio)
   pageData.subtitles = await parseSrt(props.subtitle)
 
-  document.onkeydown = e=>{
-    if(e.code === "F1"){
-      togglePlay()
+  document.onkeydown = e=> {
+    let preventDefault = true;
+
+    switch (e.code) {
+      case "F1":
+        togglePlay();
+        break;
+      case "F2":
+        togglePause();
+        break;
+      case "F3":
+        togglePlayingPrevSentence();
+        break;
+      case "F4":
+        togglePlayingNextSentence();
+        break;
+      case "F5":
+        toggleClearPlayback();
+        break;
+      case "F7":
+        setPlaybackRate(0.75);
+        break;
+      case "F8":
+        setPlaybackRate(1.0);
+        break;
+      default:
+        preventDefault = false;
+        // Handle other key presses here if needed
+        break;
     }
-    if(e.code === "F2"){
-      togglePause()
+
+    if (preventDefault) {
+      e.preventDefault(); // Will be executed only for the specified function keys (F1 to F8)
     }
-    if(e.code === "F3"){
-      togglePlayingPrevSentence()
-    }
-    if(e.code === "F4"){
-      togglePlayingNextSentence()
-    }
-    if(e.code === "F5"){
-      toggleClearPlayback()
-    }
-    if(e.code === "F7"){
-      setPlaybackRate(0.75)
-    }
-    if(e.code === "F8"){
-      setPlaybackRate(1.0)
-    }
-    e.preventDefault()
   }
 })
 
@@ -264,7 +275,9 @@ function handleNextSentence() {
                           {
                             text: true,
                             type: "primary",
-                            onClick: () => {}
+                            onClick: () => {
+                              toReview()
+                            }
                           },
                           {
                             default: () => "去校对"
@@ -281,6 +294,22 @@ function handleNextSentence() {
     pageData.currentIndex += 1
   }
   currentInterSentenceTimer.value = setTimeout(handlePlaySentence, pageData.interval * 1000, pageData.currentIndex)
+}
+
+import {useRouter} from "vue-router";
+const router = useRouter()
+import {useEntriesStore} from "../store/index.js";
+const entriesStore = useEntriesStore()
+function toReview(){
+  entriesStore.setEntries(myEntry.value.totalEntry)
+  entriesStore.setSubtitles(pageData.subtitles)
+  router.push({
+    name: "Review",
+    query:{
+      audioSrc: audioRef.value.src,
+      title: props.title,
+    }
+  })
 }
 
 function clearTimers() {
@@ -395,7 +424,7 @@ function handleSelectInterval(key) {
             <n-button :type="playButtonType" @click="togglePlay"><template #icon><Play12Filled /></template></n-button>
             <n-button :type="pauseButtonType" @click="togglePause"><template #icon><Pause16Filled /></template></n-button>
             <n-button @click="togglePlayingNextSentence"><template #icon><n-icon :size="24"><SkipNextFilled /></n-icon></template></n-button>
-            <n-button @click="setPlaybackRate(0.75)">0.75x</n-button>
+            <n-button :type="pageData.currentPlaybackRate===0.75?'warning':'default'" @click="setPlaybackRate(0.75)">0.75x</n-button>
             <n-button @click="setPlaybackRate(1.0)">1.0x</n-button>
             <n-button @click="toggleClearPlayback"><template #icon><ArrowReset24Filled /></template></n-button>
           </n-button-group>
@@ -403,7 +432,7 @@ function handleSelectInterval(key) {
             <n-button>{{currentVerboseMode}}</n-button>
             <n-button>A</n-button>
             <n-button>B</n-button>
-            <n-button >复位</n-button>
+            <n-button @click="toReview">复位</n-button>
             <n-dropdown trigger="hover" :options="repeatTimesOptions" @select="handleSelectTimes">
               <n-button>{{pageData.totalRepeatTimes}}次</n-button>
             </n-dropdown>
