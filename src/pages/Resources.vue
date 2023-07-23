@@ -2,6 +2,7 @@
 import {ref, onBeforeMount} from "vue";
 import {useRouter} from "vue-router";
 import {getDir} from '../utils/resourcesManager.js'
+import {Command} from '@tauri-apps/api/shell'
 
 const myRouter = useRouter()
 
@@ -26,6 +27,11 @@ function toLocal(src, title, father) {
     query: queryData
   })
 }
+
+async function onOpenExplorer(){
+
+
+}
 </script>
 
 <template>
@@ -36,7 +42,7 @@ function toLocal(src, title, father) {
       <template #header-extra>
         <n-button-group>
           <n-button>刷新</n-button>
-          <n-button>导入</n-button>
+          <n-button @click="onOpenExplorer">导入</n-button>
         </n-button-group>
       </template>
       <n-tabs
