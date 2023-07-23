@@ -29,7 +29,7 @@ const pageData = reactive({
   currentIndex: 0,
   subtitles: [],
   currentRepeatedTimes: 0,
-  totalRepeatTimes: 2,
+  totalRepeatTimes: 4,
   interrupt: false,
   waitingForNext: false
 })
